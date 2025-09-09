@@ -108,6 +108,7 @@ world = {
     "apartment": {
         "description": "Вы в своей тесной квартире. Неоновый свет Нео-Киото пробивается сквозь жалюзи. На столе гудит ваш старый терминал. В углу пылится видавший виды плащ.",
         "image": "apartment.jpg",
+        "effects": ["dust"],
         "choices": [
             {"text": "Подойти к терминалу.", "action": "go", "target": "terminal"},
             {"text": "Выйти на улицы Нео-Киото.", "action": "go", "target": "neo_kyoto_streets"},
