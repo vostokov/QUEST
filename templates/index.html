@@ -1,0 +1,52 @@
+<!-- /shadowrun_quest/templates/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Текстовый квест: Нео-Киото</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Анимированный фон -->
+    <div class="video-background">
+        <video autoplay muted loop id="bg-video">
+            <!-- Найдите подходящее видео, например, на pexels.com по запросу "cyberpunk city" -->
+            <source src="{{ url_for('static', filename='media/background.mp4') }}" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Контейнер для фонов сцен -->
+    <div id="scene-background"></div>
+
+    <!-- Игровой контейнер -->
+    <div id="text-mode-container" class="game-container">
+        <div id="game-text" class="game-text">Загрузка...</div>
+        <div id="choices-container" class="choices-container">
+            <!-- Кнопки выбора будут генерироваться здесь -->
+        </div>
+        <div id="input-area" class="input-area" style="display: none;">
+            <input type="text" id="player-input" placeholder="Ваш запрос...">
+            <button id="submit-input">Отправить</button>
+        </div>
+    </div>
+
+    <!-- Тактический контейнер -->
+    <div id="combat-mode-container" class="game-container" style="display: none;">
+        <canvas id="combat-canvas" width="750" height="500"></canvas>
+        <div id="combat-log" class="game-text"></div>
+        <div id="combat-choices" class="choices-container">
+            <!-- Кнопки для боя будут здесь -->
+        </div>
+    </div>
+
+    <!-- Minigame Container -->
+    <div id="minigame-container" class="game-container" style="display: none;">
+        <canvas id="minigame-canvas" width="600" height="450"></canvas>
+        <div id="minigame-log" class="game-text"></div>
+        <div id="minigame-choices" class="choices-container"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
