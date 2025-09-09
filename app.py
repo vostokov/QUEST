@@ -116,6 +116,7 @@ world = {
     "terminal": {
         "description": "Экран терминала оживает, показывая знакомый интерфейс вашего личного Искина 'Kage'.",
         "image": "terminal.jpg",
+        "effects": ["glitch"],
         "choices": [
             {"text": "Поговорить с 'Kage'.", "action": "talk_kage_prompt"},
             {"text": "Попробовать взломать сеть 'Арасаки'.", "action": "hack_arasaka"},
@@ -172,6 +173,7 @@ world = {
     "junk_shop": {
         "description": "Лавка 'Железный Хлам' завалена горами старой электроники, сломанных дронов и ржавых имплантов. За прилавком сидит седой старик, копаясь в микросхемах с помощью лупы.",
         "image": "junk_shop.jpg",
+        "effects": ["dust"],
         "choices": [
             {"text": "Поговорить со старьевщиком.", "action": "talk_shopkeeper"},
             {"text": "Выйти на улицу.", "action": "go", "target": "neo_kyoto_streets"},
@@ -213,6 +215,7 @@ world = {
     "cybernesis_lab": {
         "description": "Заброшенная лаборатория 'Кибернесис' встречает вас тишиной и пылью. Повсюду разбросано оборудование и разбитые колбы. Похоже, эвакуация была поспешной. В центре зала стоит одинокий терминал, на экране которого слабо мерцает странный символ.",
         "image": "cybernesis_lab.jpg",
+        "effects": ["dust", "flicker"],
         "choices": [
             {"text": "Подойти к терминалу.", "action": "approach_ai_fragment"},
             {"text": "Покинуть лабораторию.", "action": "go", "target": "neo_kyoto_streets"},
