@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const RANGE_COLOR = 'rgba(0, 255, 65, 0.3)';
 
     const sceneBackgroundEl = document.getElementById('scene-background');
+    const effectsContainer = document.getElementById('effects-container');
 
     let TILE_SIZE_MG = 50; // Для мини-игры
     let currentCombatState = null;
@@ -37,6 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.background_image) {
             sceneBackgroundEl.style.backgroundImage = `url(${data.background_image})`;
         }
+
+        // --- Обновляем динамические эффекты ---
+        const activeEffects = data.effects || [];
+        document.body.classList.toggle('rain-effect', activeEffects.includes('rain'));
+        document.body.classList.toggle('flicker-effect', activeEffects.includes('flicker'));
+        // --- Конец обновления эффектов ---
 
         // Проверяем, есть ли в ответе сервера активный боевой режим
         if (data.minigame && data.minigame.active) {
@@ -276,8 +283,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Функция для создания дождя ---
+    function createRain() {
+        effectsContainer.innerHTML = ''; // Очищаем старые капли
+        let i = 0;
+        while (i < 100) { // 100 капель
+            const drop = document.createElement('div');
+            drop.classList.add('raindrop');
+            
+            const left = Math.floor(Math.random() * window.innerWidth);
+            const duration = Math.random() * 0.5 + 0.3; // от 0.3 до 0.8 секунд
+            const delay = Math.random() * 5; // задержка до 5 секунд
+
+            drop.style.left = `${left}px`;
+            drop.style.animationDuration = `${duration}s`;
+            drop.style.animationDelay = `${delay}s`;
+            
+            effectsContainer.appendChild(drop);
+            i++;
+        }
+    }
+
     // --- Запуск игры ---
     async function initGame() {
+        createRain(); // Создаем капли дождя один раз при загрузке
         const response = await fetch('/game_state');
         const data = await response.json();
         update(data);
