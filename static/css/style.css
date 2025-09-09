@@ -62,7 +62,10 @@ body::after {
     overflow: hidden;
 }
 
-body.rain-effect #effects-container {
+body.rain-effect #effects-container,
+body.steam-effect #effects-container,
+body.dust-effect #effects-container
+{
     display: block; /* Показываем, когда нужен дождь */
 }
 
