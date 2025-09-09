@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createDust() {
         let i = 0;
-        while (i < 50) { // 50 пылинок
+        while (i < 150) { // 150 пылинок
             const particle = document.createElement('div');
             particle.classList.add('dust-particle');
             

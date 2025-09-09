@@ -51,7 +51,7 @@ body::after {
 
 /* --- DYNAMIC EFFECTS --- */
 #effects-container {
-    display: none; /* Скрыт по умолчанию */
+    display: block; /* Всегда видим, но пуст по умолчанию */
     position: fixed;
     top: 0;
     left: 0;
@@ -62,20 +62,18 @@ body::after {
     overflow: hidden;
 }
 
-body.rain-effect #effects-container,
-body.steam-effect #effects-container,
-body.dust-effect #effects-container
-{
-    display: block; /* Показываем, когда нужен дождь */
-}
-
 .raindrop {
+    display: none; /* Скрываем капли по умолчанию */
     position: absolute;
     bottom: 100%;
     width: 1px;
     height: 60px;
     background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.25));
     animation: rain-fall linear infinite;
+}
+
+body.rain-effect .raindrop {
+    display: block; /* Показываем капли только когда активен эффект дождя */
 }
 
 @keyframes rain-fall {
@@ -128,14 +126,20 @@ body.steam-effect #effects-container::after {
     100% { transform: translateY(-50%) scale(2); opacity: 0; }
 }
 
-body.dust-effect .dust-particle {
+/* Стили для пылинок */
+.dust-particle {
+    display: none; /* Скрываем пылинки по умолчанию */
     position: absolute;
-    width: 2px;
-    height: 2px;
-    background: rgba(255, 255, 200, 0.5);
+    width: 3px;
+    height: 3px;
+    background: rgba(255, 255, 200, 0.6);
     border-radius: 50%;
     animation: float 20s linear infinite;
     opacity: 0;
+}
+
+body.dust-effect .dust-particle {
+    display: block; /* Показываем пылинки только когда активен эффект пыли */
 }
 
 @keyframes float {
