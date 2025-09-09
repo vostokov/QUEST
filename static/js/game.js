@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeEffects = data.effects || [];
         document.body.classList.toggle('rain-effect', activeEffects.includes('rain'));
         document.body.classList.toggle('flicker-effect', activeEffects.includes('flicker'));
-        document.body.classList.toggle('dust-effect', activeEffects.includes('dust'));
+        document.body.classList.toggle('light-spots-effect', activeEffects.includes('light-spots'));
         document.body.classList.toggle('steam-effect', activeEffects.includes('steam'));
         document.body.classList.toggle('glitch-effect', activeEffects.includes('glitch'));
         // --- Конец обновления эффектов ---
@@ -307,23 +307,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function createDust() {
+    function createLightSpots() {
         let i = 0;
-        while (i < 150) { // 150 пылинок
-            const particle = document.createElement('div');
-            particle.classList.add('dust-particle');
+        while (i < 10) { // 10 световых пятен
+            const spot = document.createElement('div');
+            spot.classList.add('light-spot');
             
-            const startX = Math.random() * window.innerWidth;
             const startY = Math.random() * window.innerHeight;
-            const duration = Math.random() * 10 + 10; // от 10 до 20 секунд
-            const delay = Math.random() * 20;
+            const duration = Math.random() * 5 + 10; // от 10 до 15 секунд
+            const delay = Math.random() * 15;
 
-            particle.style.left = `${startX}px`;
-            particle.style.top = `${startY}px`;
-            particle.style.animationDuration = `${duration}s`;
-            particle.style.animationDelay = `${delay}s`;
+            spot.style.top = `${startY}px`;
+            spot.style.animationDuration = `${duration}s`;
+            spot.style.animationDelay = `${delay}s`;
             
-            effectsContainer.appendChild(particle);
+            effectsContainer.appendChild(spot);
             i++;
         }
     }
@@ -331,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Запуск игры ---
     async function initGame() {
         createRain(); // Создаем капли дождя один раз при загрузке
-        createDust(); // Создаем пылинки
+        createLightSpots(); // Создаем световые пятна
         const response = await fetch('/game_state');
         const data = await response.json();
         update(data);

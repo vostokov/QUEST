@@ -108,7 +108,7 @@ world = {
     "apartment": {
         "description": "Вы в своей тесной квартире. Неоновый свет Нео-Киото пробивается сквозь жалюзи. На столе гудит ваш старый терминал. В углу пылится видавший виды плащ.",
         "image": "apartment.jpg",
-        "effects": ["dust"],
+        "effects": ["light-spots"],
         "choices": [
             {"text": "Подойти к терминалу.", "action": "go", "target": "terminal"},
             {"text": "Выйти на улицы Нео-Киото.", "action": "go", "target": "neo_kyoto_streets"},
@@ -175,7 +175,7 @@ world = {
     "junk_shop": {
         "description": "Лавка 'Железный Хлам' завалена горами старой электроники, сломанных дронов и ржавых имплантов. За прилавком сидит седой старик, копаясь в микросхемах с помощью лупы.",
         "image": "junk_shop.jpg",
-        "effects": ["dust"],
+        "effects": ["light-spots"],
         "choices": [
             {"text": "Поговорить со старьевщиком.", "action": "talk_shopkeeper"},
             {"text": "Выйти на улицу.", "action": "go", "target": "neo_kyoto_streets"},
@@ -217,7 +217,7 @@ world = {
     "cybernesis_lab": {
         "description": "Заброшенная лаборатория 'Кибернесис' встречает вас тишиной и пылью. Повсюду разбросано оборудование и разбитые колбы. Похоже, эвакуация была поспешной. В центре зала стоит одинокий терминал, на экране которого слабо мерцает странный символ.",
         "image": "cybernesis_lab.jpg",
-        "effects": ["dust", "flicker"],
+        "effects": ["light-spots", "flicker"],
         "choices": [
             {"text": "Подойти к терминалу.", "action": "approach_ai_fragment"},
             {"text": "Покинуть лабораторию.", "action": "go", "target": "neo_kyoto_streets"},
