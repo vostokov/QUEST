@@ -23,11 +23,14 @@ def get_initial_player_state():
             "charisma": 3,
             "strength": 4
         },
+        "implants": {
+            "charisma": False
+        },
         "quests": {
             "main_quest_step": "start", # 'start', 'need_key', 'has_key', 'data_hacked', 'meet_client', 'chapter_1_completed', 'chapter_2_start', 'chapter_2_find_processor', 'chapter_2_has_processor', 'chapter_2_fragment_location_known'
             "bartender_quest": "not_started", # 'not_started', 'started', 'completed', 'rewarded'
             "doc_razor_quest": "not_started", # 'not_started', 'started', 'has_component', 'completed'
-            "substation_quest": "not_started", # 'not_started', 'started', 'completed', 'rewarded',
+            "substation_quest": "not_started", # 'not_started', 'started', 'completed', 'rewarded'
             "decker_quest": "not_started", # 'not_started', 'started', 'completed', 'rewarded',
             "decker_quest_2": "not_started", # 'not_started', 'started', 'completed', 'rewarded'
             "decker_location_inquired": False
@@ -122,6 +125,7 @@ world = {
     "neo_kyoto_streets": {
         "description": "Улицы Нео-Киото гудят жизнью. Дождь смешивается с неоном, отражаясь в лужах на асфальте. Мимо проносятся аэрокары, а толпа спешит по своим делам. Куда направитесь?",
         "image": "neo_kyoto_streets.jpg",
+        "effects": ["rain"],
         "choices": [
             {"text": "Зайти в бар 'Забытый Бит'.", "action": "go", "target": "bar_forgotten_bit"},
             {"text": "Заглянуть в клинику риппердока.", "action": "go", "target": "doc_razors_clinic"},
@@ -142,6 +146,7 @@ world = {
     "bar_forgotten_bit": {
         "description": "В баре 'Забытый Бит' пахнет дешёвым синтетическим алкоголем и озоном от старой электроники. За стойкой протирает стакан угрюмый орк-бармен. В дальнем углу, склонившись над планшетом, сидит фигура в капюшоне.",
         "image": "bar_forgotten_bit.jpg",
+        "effects": ["flicker"],
         "choices": [
             {"text": "Поговорить с барменом.", "action": "talk_bartender"},
             {"text": "Выйти на улицу.", "action": "go", "target": "neo_kyoto_streets"},
@@ -150,6 +155,7 @@ world = {
     "back_alley": {
         "description": "Вонючий переулок завален мусором. В тусклом свете неоновой вывески трое панков с дешёвыми имплантами блокируют проход. Один из них, с хромированной челюстью, делает шаг вперёд.",
         "image": "back_alley.jpg",
+        "effects": ["rain", "flicker"],
         "choices": [
             {"text": "Разобраться с проблемой бармена.", "action": "confront_gang"},
             {"text": "Молча развернуться и уйти.", "action": "go", "target": "neo_kyoto_streets"},
@@ -293,7 +299,10 @@ def talk_to_iskin(command):
         elif quest_step == "chapter_3_start":
             return "ИСКИН 'Kage': Ваша цель - получить военный ледокол. Мистер Шэдоу предполагает, что Декер может помочь."
         elif quest_step == "chapter_3_has_icebreaker":
-            return "ИСКИН 'Kage': Ледокол у вас. Теперь нужно найти точку входа в сеть, чтобы атаковать 'Черный Лёд'. Я анализирую данные... Возвращайтесь позже."
+            player["quests"]["main_quest_step"] = "chapter_3_target_found"
+            return "ИСКИН 'Kage': Ледокол у вас. Я проанализировал данные. 'Черный Лёд' защищает мобильный сервер 'Арасаки', который сейчас находится в бронированном конвое. Вам нужно перехватить его."
+        elif quest_step == "chapter_3_target_found":
+            return "ИСКИН 'Kage': Ваша цель - перехватить бронированный конвой 'Арасаки' и взломать мобильный сервер с помощью военного ледокола."
 
 
 
@@ -332,13 +341,15 @@ def game_state():
     player.clear(); player.update(get_initial_player_state())
     location_data = world[player["location"]]
     image_url = url_for('static', filename=f'images/{location_data.get("image", "default.jpg")}')
+    effects = location_data.get("effects", [])
 
     return jsonify({
         "description": location_data["description"],
         "choices": location_data["choices"],
         "player": player,
         "combat": player["combat"],
-        "background_image": image_url
+        "background_image": image_url,
+        "effects": effects
     })
 
 @app.route("/action", methods=["POST"])
@@ -351,13 +362,25 @@ def handle_action():
     choices = []
     show_input = False
     background_image = ""
+    effects = []
 
     # --- БЛОК ОБРАБОТКИ МИНИ-ИГРЫ ---
     if player.get("minigame", {}).get("active"):
         # Если активна мини-игра, все действия, кроме выхода, обрабатываются здесь
         if action != "minigame_exit":
             description, choices = handle_minigame_action(data, player)
-            return jsonify({"description": description, "choices": choices, "minigame": player["minigame"], "player": player})
+            background_image = url_for('static', filename=f'images/{world[player["location"]].get("image", "default.jpg")}')
+            effects = world[player["location"]].get("effects", [])
+            return jsonify({
+                "description": description,
+                "choices": choices,
+                "minigame": player["minigame"],
+                "player": player,
+                "combat": player["combat"],
+                "background_image": background_image,
+                "show_input": False,
+                "effects": effects
+            })
         # minigame_exit обрабатывается ниже в общем потоке
 
     # --- БЛОК ОБРАБОТКИ ТАКТИЧЕСКОГО БОЯ ---
@@ -408,7 +431,8 @@ def handle_action():
                 description = f"Вы победили '{enemy['name']}'!\nБанда разбегается.\n\n(Вы получили {enemy['reward_credits']} кредитов. Квест 'Проблема с бандой' может быть завершен.)"
                 choices = [{"text": "Вернуться на улицы.", "action": "go", "target": "neo_kyoto_streets"}]
                 background_image = url_for('static', filename=f'images/{world["neo_kyoto_streets"].get("image", "default.jpg")}')
-                return jsonify({"description": description, "choices": choices, "combat": player["combat"], "player": player, "background_image": background_image})
+                effects = world["neo_kyoto_streets"].get("effects", [])
+                return jsonify({"description": description, "choices": choices, "combat": player["combat"], "player": player, "background_image": background_image, "effects": effects})
 
         # --- ЗАВЕРШЕНИЕ ХОДА И ХОД ПРОТИВНИКА ---
         elif action == "combat_end_turn":
@@ -444,7 +468,8 @@ def handle_action():
                 description = f"Вы теряете сознание... и приходите в себя в своей квартире. Голова раскалывается, а в кармане не хватает {lost_credits} кредитов."
                 choices = world["apartment"]["choices"]
                 background_image = url_for('static', filename=f'images/{world["apartment"].get("image", "default.jpg")}')
-                return jsonify({"description": description, "choices": choices, "combat": player["combat"], "player": player, "background_image": background_image})
+                effects = world["apartment"].get("effects", [])
+                return jsonify({"description": description, "choices": choices, "combat": player["combat"], "player": player, "background_image": background_image, "effects": effects})
 
             # Начало нового хода игрока
             player["stats"]["ap"] = player["stats"]["max_ap"]
@@ -452,9 +477,10 @@ def handle_action():
 
         # --- ФОРМИРОВАНИЕ ОТВЕТА ДЛЯ ПРОДОЛЖЕНИЯ БОЯ ---
         background_image = url_for('static', filename=f'images/{world[player["location"]].get("image", "default.jpg")}')
+        effects = world[player["location"]].get("effects", [])
         description = "\n".join(combat_log)
         choices = [{"text": "Завершить ход", "action": "combat_end_turn"}]
-        return jsonify({"description": description, "choices": choices, "combat": player["combat"], "player": player, "background_image": background_image})
+        return jsonify({"description": description, "choices": choices, "combat": player["combat"], "player": player, "background_image": background_image, "effects": effects})
     
     # Логика обработки действий
     if action == "go":
@@ -482,6 +508,9 @@ def handle_action():
                 choices.append({"text": "Отправиться в лабораторию 'Кибернесис'.", "action": "go", "target": "cybernesis_lab"})
             if player["quests"].get("decker_quest_2") == "started":
                 choices.append({"text": "Отправиться в архив NCPD.", "action": "go", "target": "ncpd_archive"})
+            if player["quests"]["main_quest_step"] == "chapter_3_target_found":
+                # В будущем здесь будет новая локация для перехвата конвоя
+                choices.append({"text": "[ЗАГЛУШКА] Устроить засаду на конвой.", "action": "go", "target": "neo_kyoto_streets"})
             if player["quests"]["decker_quest"] == "started" and "relay_keycard" in player["inventory"]:
                 choices.append({"text": "Отправиться к ретранслятору 'Арасаки'.", "action": "go", "target": "arasaka_relay"})
 
@@ -499,6 +528,13 @@ def handle_action():
             elif decker_is_available:
                  description = "В баре 'Забытый Бит' как обычно. Знакомый орк-бармен за стойкой. Фигура Глитча исчезла, но в углу теперь сидит суровый мужчина со шрамом, который внимательно вас изучает."
                  choices.insert(1, {"text": "Поговорить с ветераном в углу (Декер).", "action": "talk_decker"})
+        
+        # Динамические персонажи в клинике
+        if player["location"] == "doc_razors_clinic":
+            if player["quests"]["doc_razor_quest"] == "completed":
+                description = "В клинике Дока Рэйзора чисто и пахнет антисептиком. Сам Док работает над протезом. На кушетке сидит молчаливый азиат с татуировками якудза, ожидая своей очереди."
+                choices.insert(1, {"text": "Поговорить с пациентом.", "action": "talk_yakuza_patient"})
+
 
     elif action == "talk_kage_prompt":
         description = "Введите ваш запрос для Искина 'Kage'."
@@ -625,11 +661,21 @@ def handle_action():
         description = f"Боевой режим активирован! Вы видите '{enemy['name']}' на тактической сетке."
         choices = [{"text": "Завершить ход", "action": "combat_end_turn"}]
         background_image = url_for('static', filename=f'images/{world[player["location"]].get("image", "default.jpg")}')
+        effects = world[player["location"]].get("effects", [])
         # Возвращаем полный объект player и combat, чтобы фронтенд знал, что нужно переключиться в режим сетки
-        return jsonify({"description": description, "choices": choices, "combat": player["combat"], "player": player, "background_image": background_image})
+        return jsonify({
+            "description": description,
+            "choices": choices,
+            "combat": player["combat"],
+            "player": player,
+            "background_image": background_image,
+            "effects": effects
+        })
 
     elif action == "talk_doc_razor":
         quest_status = player["quests"]["doc_razor_quest"]
+        
+        # Определение основного описания диалога
         if "biomonitor_regulator" in player["inventory"] and quest_status == "started":
             player["inventory"].remove("biomonitor_regulator")
             player["credits"] += 300
@@ -643,7 +689,18 @@ def handle_action():
         elif quest_status == "completed":
             description = "'Спасибо за помощь. Если понадобится качественный хром - заходи.'"
         
-        choices = world[player["location"]]["choices"]
+        # Определение динамических выборов
+        choices = list(world[player["location"]]["choices"]) # Создаем копию, чтобы не изменять оригинал
+        
+        # Динамическое добавление пациента после выполнения квеста
+        if player["quests"]["doc_razor_quest"] == "completed":
+            choices.insert(1, {"text": "Поговорить с пациентом.", "action": "talk_yakuza_patient"})
+
+        # Динамическое добавление импланта после первой главы
+        main_quest_status = player["quests"]["main_quest_step"]
+        implant_available = main_quest_status not in ["start", "need_key", "has_key", "data_hacked", "meet_client"]
+        if implant_available and not player.get("implants", {}).get("charisma"):
+            choices.insert(1, {"text": "Спросить об улучшении харизмы (750 кредитов).", "action": "buy_charisma_implant"})
 
     elif action == "talk_shopkeeper":
         description, choices = _generate_shop_interface(player)
@@ -683,6 +740,22 @@ def handle_action():
             description = "'Вы пришли с пустыми руками?' - голос фигуры холоден как сталь. - 'Не тратьте мое время.'"
         choices = [{"text": "Покинуть площадку.", "action": "go", "target": "neo_kyoto_streets"}]
 
+    elif action == "buy_charisma_implant":
+        implant_cost = 750
+        if player["credits"] >= implant_cost:
+            player["credits"] -= implant_cost
+            player["stats"]["charisma"] += 1
+            player["implants"]["charisma"] = True
+            description = "Операция прошла быстро. Док Рэйзор вживил вам нейро-лингвистический процессор. Вы чувствуете, как слова складываются в предложения легче, а уверенность в себе растет.\n\n(Ваша Харизма увеличена на 1)"
+        else:
+            description = f"'Хороший хром стоит хороших денег', - говорит Док. - 'У тебя не хватает. Нужно {implant_cost} кредитов.'"
+        
+        # Возвращаемся в клинику с обновленными выборами
+        choices = list(world[player["location"]]["choices"])
+        if player["quests"]["doc_razor_quest"] == "completed":
+            choices.insert(1, {"text": "Поговорить с пациентом.", "action": "talk_yakuza_patient"})
+        # Опция покупки импланта исчезнет автоматически, так как player['implants']['charisma'] теперь True
+
     elif action == "talk_vector":
         quest_status = player["quests"]["substation_quest"]
         if quest_status == "not_started":
@@ -699,7 +772,13 @@ def handle_action():
             player["reputation"]["netrunners"] += 1
             player["quests"]["substation_quest"] = "rewarded" # Чтобы не давал награду дважды
             choices = world["digital_dive"]["choices"]
-        else: # rewarded
+        elif quest_status == "rewarded":
+            if player["reputation"]["netrunners"] > 0:
+                description = f"'Приветствую, спаситель нашей сети', - с уважением кивает Вектор. - 'Твоя репутация здесь безупречна.'"
+            else:
+                description = "'Еще раз спасибо за помощь с питанием.'"
+            choices = world["digital_dive"]["choices"]
+        else:
             description = "'Еще раз спасибо за помощь с питанием.'"
             choices = world["digital_dive"]["choices"]
 
@@ -732,7 +811,18 @@ def handle_action():
         player["minigame"]["completed"] = False
         description = "Интерфейс подстанции. Проложите силовой кабель от входа (зеленый) к выходу (синий), кликая на соседние ячейки."
         choices = [{"text": "Отключиться от терминала", "action": "minigame_exit"}]
-        return jsonify({"description": description, "choices": choices, "minigame": player["minigame"], "player": player})
+        background_image = url_for('static', filename=f'images/{world["substation_42"].get("image", "default.jpg")}')
+        effects = world["substation_42"].get("effects", [])
+        return jsonify({
+            "description": description,
+            "choices": choices,
+            "minigame": player["minigame"],
+            "player": player,
+            "combat": player["combat"],
+            "background_image": background_image,
+            "show_input": False,
+            "effects": effects
+        })
 
     elif action == "talk_decker":
         decker_quest_1_status = player["quests"]["decker_quest"]
@@ -762,7 +852,15 @@ def handle_action():
                 elif decker_quest_1_status == "started":
                     description = "'Ретранслятор 'Арасаки' все еще работает. Закончи то, о чем мы договаривались, прежде чем просить о новом одолжении.'\n\n(Квест 'Саботаж' все еще активен.)"
                 elif decker_quest_1_status == "completed":
-                    description = "'Ты саботировал ретранслятор? Отлично. Теперь забери свою награду, и тогда поговорим о ледоколе.'\n\n(Вернитесь к Декеру, чтобы получить награду за квест 'Саботаж'.)"
+                    # Сначала выдаем награду за первый квест
+                    description = "'Ты саботировал ретранслятор? Отлично. Вот твоя награда.'\n\n(Вы получили 500 кредитов)\n\n"
+                    player["credits"] += 500
+                    player["quests"]["decker_quest"] = "rewarded"
+                    if "relay_keycard" in player["inventory"]: player["inventory"].remove("relay_keycard")
+                    # Сразу же предлагаем второй квест
+                    description += "'А теперь о ледоколе... Такие вещи не валяются на дороге. Но... я могу достать один. Взамен сослужи мне еще одну службу. 'Арасака' уволила меня, но мое досье все еще в базе данных NCPD. Если оно всплывет, мне конец. Проникни в их архив и сотри его. Вот пропуск. Справишься - ледокол твой.'\n\n(Квест 'Удалить прошлое' начат)"
+                    player["quests"]["decker_quest_2"] = "started"
+                    player["inventory"].append("ncpd_archive_pass")
         elif decker_quest_1_status == "not_started":
             # Начальное предложение первого квеста Декера, если игрок не на квесте ледокола
             description = "Мужчина с суровым лицом и шрамом через бровь кивает вам. 'Я Декер. Был... начальником смены в 'Арасаке'. Пока кое-кто не устроил там переполох. Они сделали меня козлом отпущения. Я хочу отомстить. Саботируй их ретранслятор в секторе 7, и я заплачу.'\n\n(Квест 'Саботаж' начат. Получена ключ-карта.)"
@@ -787,8 +885,8 @@ def handle_action():
             choices.insert(1, {"text": "Поговорить с ветераном в углу (Декер).", "action": "talk_decker"})
 
     elif action == "sabotage_relay":
-        # Проверка на репутацию у нетраннеров, полученную за квест с подстанцией
-        if player["reputation"]["netrunners"] > 0:
+        # Проверка на Харизму (интеллект)
+        if player["stats"]["charisma"] >= 4:
             description = "Используя свои знания, полученные от нетраннеров, вы запускаете каскадный сбой в системе. Ретранслятор выходит из строя, не подняв тревоги. Отличная работа."
             player["quests"]["decker_quest"] = "completed"
             choices = [{"text": "Покинуть территорию.", "action": "go", "target": "neo_kyoto_streets"}]
@@ -841,11 +939,17 @@ def handle_action():
         player["quests"]["bartender_quest"] = "rewarded"
         choices = world["bar_forgotten_bit"]["choices"]
 
+    elif action == "talk_yakuza_patient":
+        description = "Мужчина медленно поворачивает голову. Его глаза пусты, но в них видна старая боль. 'Док - хороший человек. Он помогает тем, от кого отказались другие. Не создавай ему проблем.' Он снова отворачивается, давая понять, что разговор окончен."
+        choices = world["doc_razors_clinic"]["choices"]
+
     else: # Если действие не найдено, возвращаем текущее состояние
         location_data = world[player["location"]]
         description = location_data["description"]
         choices = location_data["choices"]
 
+    final_location_data = world.get(player["location"], {})
+    effects = final_location_data.get("effects", [])
     background_image = url_for('static', filename=f'images/{world[player["location"]].get("image", "default.jpg")}')
 
     return jsonify({
@@ -855,7 +959,8 @@ def handle_action():
         "player": player,
         "combat": player["combat"],
         "minigame": player["minigame"],
-        "background_image": background_image
+        "background_image": background_image,
+        "effects": effects
     })
 
 def handle_minigame_action(data, player):

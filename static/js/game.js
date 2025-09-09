@@ -21,13 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const mg_ctx = minigameCanvas.getContext('2d');
 
     // --- Константы для рендеринга боя ---
-    const TILE_SIZE = 50;
+    let TILE_SIZE = 50; // Теперь это переменная
     const PLAYER_COLOR = '#00ff41';
     const ENEMY_COLOR = '#ff4141';
     const RANGE_COLOR = 'rgba(0, 255, 65, 0.3)';
 
     const sceneBackgroundEl = document.getElementById('scene-background');
 
+    let TILE_SIZE_MG = 50; // Для мини-игры
     let currentCombatState = null;
 
     // --- Главная функция обновления ---
@@ -82,6 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
             combatChoicesEl.appendChild(button);
         });
 
+        // --- Адаптивное масштабирование Canvas ---
+        const containerWidth = combatModeContainer.offsetWidth * 0.9; // 90% ширины контейнера
+        TILE_SIZE = Math.floor(containerWidth / currentCombatState.grid_size[0]);
+        combatCanvas.width = TILE_SIZE * currentCombatState.grid_size[0];
+        combatCanvas.height = TILE_SIZE * currentCombatState.grid_size[1];
+        // --- Конец масштабирования ---
+
+
         // Рендерим канвас
         drawGrid(currentCombatState.grid_size);
         drawMovementRange(data.player.stats, currentCombatState.player_pos);
@@ -104,9 +113,15 @@ document.addEventListener('DOMContentLoaded', () => {
             minigameChoicesEl.appendChild(button);
         });
 
-        // Draw minigame
+        // --- Адаптивное масштабирование Canvas для мини-игры ---
+        const mgContainerWidth = minigameContainer.offsetWidth * 0.9;
         const mg = data.minigame;
-        const TILE_SIZE_MG = 50; // minigame tile size
+        TILE_SIZE_MG = Math.floor(mgContainerWidth / mg.grid_size[0]);
+        minigameCanvas.width = TILE_SIZE_MG * mg.grid_size[0];
+        minigameCanvas.height = TILE_SIZE_MG * mg.grid_size[1];
+        // --- Конец масштабирования ---
+
+        // Draw minigame
         mg_ctx.clearRect(0, 0, minigameCanvas.width, minigameCanvas.height);
 
         // Draw grid
@@ -246,7 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
     minigameCanvas.addEventListener('click', (e) => {
         if (!minigameContainer.style.display || minigameContainer.style.display === 'none') return;
 
-        const TILE_SIZE_MG = 50;
         const rect = minigameCanvas.getBoundingClientRect();
         const x = Math.floor((e.clientX - rect.left) / TILE_SIZE_MG);
         const y = Math.floor((e.clientY - rect.top) / TILE_SIZE_MG);
@@ -254,6 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
         sendAction({ action: 'minigame_connect_node', target_pos: [x, y] });
     });
 
+    // Перерисовываем при изменении размера окна
+    window.addEventListener('resize', () => {
+        if (currentCombatState && currentCombatState.active) {
+            // Можно было бы перерисовать, но для простоты пока оставим так.
+            // При следующем действии игрока поле само перерисуется с новым размером.
+        }
+    });
 
     // --- Запуск игры ---
     async function initGame() {

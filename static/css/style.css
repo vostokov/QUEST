@@ -49,6 +49,65 @@ body::after {
     transition: background-image 1s ease-in-out;
 }
 
+/* --- DYNAMIC EFFECTS --- */
+#effects-container {
+    display: none; /* Скрыт по умолчанию */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Клики проходят сквозь него */
+    z-index: 10; /* Находится поверх всего */
+    overflow: hidden;
+}
+
+body.rain-effect #effects-container {
+    display: block; /* Показываем, когда нужен дождь */
+}
+
+.raindrop {
+    position: absolute;
+    bottom: 100%;
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.25));
+    animation: rain-fall linear infinite;
+}
+
+@keyframes rain-fall {
+    to {
+        transform: translateY(110vh);
+    }
+}
+
+body.flicker-effect::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 11; /* Поверх дождя */
+    pointer-events: none;
+    animation: flicker 5s linear infinite;
+}
+
+@keyframes flicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        box-shadow:
+            0 0 5px rgba(100, 255, 255, 0.1),
+            0 0 10px rgba(100, 255, 255, 0.1),
+            0 0 20px rgba(100, 255, 255, 0.1),
+            0 0 40px #0ff,
+            0 0 70px #0ff,
+            0 0 80px #0ff;
+    }
+    20%, 24%, 55% {
+        box-shadow: none;
+    }
+}
+
 .game-container {
     display: flex;
     flex-direction: column;
@@ -110,13 +169,17 @@ body::after {
 #combat-canvas {
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid #00ff41;
-    margin-bottom: 20px;
     cursor: pointer;
+    max-width: 100%; /* Canvas не будет выходить за пределы родителя */
+    box-sizing: border-box;
+    margin-bottom: 20px;
 }
 
 #minigame-canvas {
     background: rgba(10, 10, 20, 0.8); /* Dark blue background */
     border: 1px solid #41a0ff; /* Blue border */
-    margin-bottom: 20px;
     cursor: pointer;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 20px;
 }
